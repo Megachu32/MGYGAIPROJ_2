@@ -10,3 +10,6 @@ the feature planned in this project would be:
 The AI that's going to be used is going to be using the Minimax algorithm, in which it would also use Alpha-Beta Pruning to make the player's gameplay comfortable.
 
 (maybe if there's extra time, an API could be made.... probably not deployed though)
+
+This project is done for study purpose only
+All right reserved
