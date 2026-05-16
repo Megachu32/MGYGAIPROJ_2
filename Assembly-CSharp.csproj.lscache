@@ -53,7 +53,6 @@ TemporaryDependencyNodeTargetIdentifier=netstandard2.1
 Assets/Scripts/
  AI Scripts/ai_script.cs
  Game Scripts/
-  board_logic.cs
   GridPlacer.cs
   Test_Script.cs
  UI Scripts/ui_script.cs
