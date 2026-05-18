@@ -21,6 +21,10 @@ public class GridPlacer : MonoBehaviour
     public Vector2Int minBounds = new Vector2Int(-5, -5);
     public Vector2Int maxBounds = new Vector2Int(5, 5);
 
+    [Header("Outside Scripts")]
+    public timer_script timerScript;
+
+
     private bool isPlayer1Turn = true;
 
     // A custom container to hold both the Player ID and the actual piece on the board
@@ -73,6 +77,7 @@ public class GridPlacer : MonoBehaviour
 
         // Figure out whose turn it is BEFORE placing the piece
         int currentPlayerID = isPlayer1Turn ? 1 : 2;
+        timerScript.SwitchTurn(); // Start the timer for the current player as soon as they place a piece
 
         // ==========================================
         // --- NEW RULE: BLOCK LINES LONGER THAN 4 ---

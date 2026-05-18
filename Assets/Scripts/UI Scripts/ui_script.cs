@@ -2,12 +2,15 @@ using UnityEngine;
 
 public class ui_script : MonoBehaviour
 {
+    public timer_script targetScript;
+
     public void resetButton()
     {
         Debug.Log("Reset button clicked!");
     }
     public void startButton()
     {
+        targetScript.StartTimers();
         Debug.Log("Start button clicked!");
     }
     public void dropDownDifivulty()

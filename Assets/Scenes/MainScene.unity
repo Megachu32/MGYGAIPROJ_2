@@ -2160,6 +2160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8736852ec2cebb14ca3b57d5e483ab85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ui_script
+  targetScript: {fileID: 1132226395}
 --- !u!1 &1147114281
 GameObject:
   m_ObjectHideFlags: 0
@@ -2501,6 +2502,7 @@ MonoBehaviour:
   player2SpecialPrefab: {fileID: 5407974671383454253, guid: be77ee952179ca14db6f9e4436a47e98, type: 3}
   minBounds: {x: -4, y: -4}
   maxBounds: {x: 3, y: 3}
+  timerScript: {fileID: 1132226395}
 --- !u!1 &1218973668
 GameObject:
   m_ObjectHideFlags: 0
@@ -3268,7 +3270,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 363, y: -4.999939}
+  m_AnchoredPosition: {x: 363, y: -4.999878}
   m_SizeDelta: {x: -1076, y: -390}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1597917617
