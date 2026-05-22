@@ -118,6 +118,24 @@ public class timer_script : MonoBehaviour
         Debug.Log("Timers Paused.");
     }
 
+    // function to reset the timer
+    public void ResetTimers()
+    {
+        // 1. Stop the clock and set status back to Not Started
+        isRunning = false;
+        activeTimer = 0;
+
+        // 2. Refill the time variables based on your starting time
+        p1TimeRemaining = startingTimeMinutes * 60f;
+        p2TimeRemaining = startingTimeMinutes * 60f;
+
+        // 3. Force the UI to update immediately so the players see the full time again
+        UpdateDisplay(timer1Text, p1TimeRemaining);
+        UpdateDisplay(timer2Text, p2TimeRemaining);
+
+        Debug.Log("Timers have been reset back to " + startingTimeMinutes + " minutes!");
+    }
+
     // function to display in the logs when a timer hits zero
     private void OnTimerZero(int timerNumber)
     {

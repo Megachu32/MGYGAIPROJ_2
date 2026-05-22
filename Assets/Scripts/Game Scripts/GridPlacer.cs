@@ -7,6 +7,11 @@ public class GridPlacer : MonoBehaviour
     [Header("Grid Setup")]
     public Grid gameGrid; 
     
+    // --- NEW: SCENE ORGANIZATION ---
+    [Header("Scene Organization")]
+    [Tooltip("Drag an empty GameObject here to hold all the spawned pieces.")]
+    public Transform piecesGroup; 
+    
     [Header("Standard Player Prefabs")]
     public GameObject player1Prefab; 
     public GameObject player2Prefab; 
@@ -27,6 +32,8 @@ public class GridPlacer : MonoBehaviour
 
     private bool isPlayer1Turn = true;
 
+    public bool canPlacePieces = false;
+
     // A custom container to hold both the Player ID and the actual piece on the board
     private class PieceData
     {
@@ -45,8 +52,45 @@ public class GridPlacer : MonoBehaviour
     // Our Dictionary now stores our custom PieceData instead of just an integer
     private Dictionary<Vector2Int, PieceData> gridData = new Dictionary<Vector2Int, PieceData>();
 
+    public void EnablePlacing()
+    {
+        canPlacePieces = true;
+        Debug.Log("GridPlacer is now active!");
+    }
+
+    // You can also add a function to stop it again if needed
+    public void DisablePlacing()
+    {
+        canPlacePieces = false;
+    }
+
+    public void ClearBoard()
+    {
+        // 1. Loop through all child objects inside the group and destroy them
+        if (piecesGroup != null)
+        {
+            foreach (Transform childPiece in piecesGroup)
+            {
+                Destroy(childPiece.gameObject);
+            }
+        }
+
+        // 2. Wipe the internal memory so the game knows the spaces are empty again
+        gridData.Clear();
+
+        // 3. Reset the turn back to Player 1
+        isPlayer1Turn = true;
+
+        Debug.Log("The board has been cleared!");
+    }
+
     void Update()
     {
+        if (!canPlacePieces) 
+        {
+            return;
+        }
+        
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
             PlacePieceAtMouse();
@@ -92,6 +136,13 @@ public class GridPlacer : MonoBehaviour
         Vector3 snapPosition = gameGrid.GetCellCenterWorld(cellCoordinate3D);
         GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab;
         GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
+
+        // --- NEW: PARENT THE STANDARD PIECE ---
+        // If we assigned a group in the inspector, put the piece inside it
+        if (piecesGroup != null)
+        {
+            spawnedPiece.transform.SetParent(piecesGroup);
+        }
 
         // Save BOTH the Player ID and the spawned piece into our Dictionary
         gridData.Add(cellCoordinate2D, new PieceData(currentPlayerID, spawnedPiece, false));
@@ -200,6 +251,12 @@ public class GridPlacer : MonoBehaviour
                 Vector3 snapPos = gameGrid.GetCellCenterWorld(new Vector3Int(startPos.x, startPos.y, 0));
                 GameObject specialPrefab = (playerID == 1) ? player1SpecialPrefab : player2SpecialPrefab;
                 GameObject specialPiece = Instantiate(specialPrefab, snapPos, Quaternion.identity);
+
+                // --- NEW: PARENT THE SPECIAL PIECE ---
+                if (piecesGroup != null)
+                {
+                    specialPiece.transform.SetParent(piecesGroup);
+                }
 
                 // Use brackets [] instead of .Add() to safely update the memory without errors
                 gridData[startPos] = new PieceData(playerID, specialPiece, true);

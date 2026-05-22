@@ -2161,6 +2161,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ui_script
   targetScript: {fileID: 1132226395}
+  targetGridPlacer: {fileID: 1179187504}
 --- !u!1 &1147114281
 GameObject:
   m_ObjectHideFlags: 0
@@ -2496,6 +2497,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GridPlacer
   gameGrid: {fileID: 148943853}
+  piecesGroup: {fileID: 2079306070}
   player1Prefab: {fileID: 3338288951691463429, guid: 5266b95ba2fd6c542962017bc2fcc60e, type: 3}
   player2Prefab: {fileID: 2654619559828167164, guid: b4c66e3b3b153004e9c3a276c329e61f, type: 3}
   player1SpecialPrefab: {fileID: 4018098515706953191, guid: 125a19ffe633fee4bb9120a5879922df, type: 3}
@@ -2503,6 +2505,7 @@ MonoBehaviour:
   minBounds: {x: -4, y: -4}
   maxBounds: {x: 3, y: 3}
   timerScript: {fileID: 1132226395}
+  canPlacePieces: 0
 --- !u!1 &1218973668
 GameObject:
   m_ObjectHideFlags: 0
@@ -2795,37 +2798,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1305014616}
   m_CullTransparentMesh: 1
---- !u!1 &1388411904
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1388411905}
-  m_Layer: 0
-  m_Name: 'White_Pieces_Group '
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1388411905
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1388411904}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1398182124
 GameObject:
   m_ObjectHideFlags: 0
@@ -4818,7 +4790,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2079306070}
   m_Layer: 0
-  m_Name: Black_Pieces_Group
+  m_Name: Piece_Group
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4848,7 +4820,6 @@ SceneRoots:
   - {fileID: 1051774727}
   - {fileID: 1179187503}
   - {fileID: 2079306070}
-  - {fileID: 1388411905}
   - {fileID: 1801742206}
   - {fileID: 329587856}
   - {fileID: 148943854}
