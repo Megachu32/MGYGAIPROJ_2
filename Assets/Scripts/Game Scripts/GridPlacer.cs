@@ -31,8 +31,11 @@ public class GridPlacer : MonoBehaviour
 
 
     private bool isPlayer1Turn = true;
+    private bool isAIThinking = false;
 
     public bool canPlacePieces = false;
+
+    
 
     // A custom container to hold both the Player ID and the actual piece on the board
     private class PieceData
@@ -90,11 +93,37 @@ public class GridPlacer : MonoBehaviour
         {
             return;
         }
-        
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            
+        if (isPlayer1Turn)
         {
-            PlacePieceAtMouse();
+            // --- HUMAN TURN ---
+            // Only check for mouse clicks if it's Player 1's turn
+            if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+            {
+                PlacePieceAtMouse();
+            }
         }
+        else
+        {
+            // --- AI TURN ---
+            // No mouse click required! Just make sure it isn't already thinking.
+            if (!isAIThinking)
+            {
+                StartCoroutine(WaitAndMakeAIMove());
+            }
+        }
+    }
+
+    //adding delay and calling the ai move function
+    System.Collections.IEnumerator WaitAndMakeAIMove()
+    {
+        isAIThinking = true; // Lock the AI so it doesn't trigger again
+        
+        yield return new WaitForSeconds(0.75f); // Wait for a fraction of a second
+        
+        aiMove(); // Execute the move
+        
+        isAIThinking = false; // Unlock for the next turn
     }
 
     // function to place a piece on the board
@@ -282,5 +311,67 @@ public class GridPlacer : MonoBehaviour
         }
 
         return foundCells;
+    }
+
+    void aiMove()
+    {
+        // It is the AI's turn, so the ID is automatically 2.
+        int currentPlayerID = 2;
+
+        //making the list for avalable move
+        List<Vector2Int> validMoves = new List<Vector2Int>();
+
+        // Loop through all cells in the grid to find valid moves
+        for (int x = minBounds.x; x <= maxBounds.x; x++) 
+        {
+            for (int y = minBounds.y; y <= maxBounds.y; y++)
+            {
+                Vector2Int potentialCell2D = new Vector2Int(x, y);
+                Vector3Int potentialCell3D = new Vector3Int(x, y, 0);
+
+                // Must be in bounds
+                if (!IsCellInBounds(potentialCell3D)) continue;
+
+                // Must NOT be taken
+                if (gridData.ContainsKey(potentialCell2D)) continue;
+
+                // Must NOT break the "lines longer than 4" rule
+                if (WouldCreateLineTooLong(potentialCell2D, currentPlayerID)) continue;
+
+                // If it passes all checks, add it to our list of possible moves
+                validMoves.Add(potentialCell2D);
+            }
+        }
+
+        //check if no avalible move
+        if (validMoves.Count == 0)
+        {
+            Debug.Log("AI has no valid moves left! The board is full or blocked.");
+            return; 
+        }
+
+        // Pick a random valid cell
+        int randomIndex = UnityEngine.Random.Range(0, validMoves.Count);
+        Vector2Int chosenCell2D = validMoves[randomIndex];
+        Vector3Int chosenCell3D = new Vector3Int(chosenCell2D.x, chosenCell2D.y, 0);
+
+        // Place the piece in that cell
+        timerScript.SwitchTurn();
+
+        Vector3 snapPosition = gameGrid.GetCellCenterWorld(chosenCell3D);
+        GameObject currentPrefabToPlace = player2Prefab; // It's the AI, so always use Player 2's prefab
+        GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
+
+        if (piecesGroup != null)
+        {
+            spawnedPiece.transform.SetParent(piecesGroup);
+        }
+
+        gridData.Add(chosenCell2D, new PieceData(currentPlayerID, spawnedPiece, false));
+
+        CheckMigoYogo(chosenCell2D, currentPlayerID);
+
+        // Give the turn back to Player 1
+        isPlayer1Turn = true;
     }
 }
