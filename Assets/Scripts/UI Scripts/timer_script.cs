@@ -105,10 +105,10 @@ public class timer_script : MonoBehaviour
             activeTimer = 1;
             Debug.Log("Switched to Timer 1");
         }
-        else
-        {
-            StartTimers(); 
-        }
+        // else
+        // {
+        //     StartTimers(); 
+        // }
     }
 
     // function to pause the timer

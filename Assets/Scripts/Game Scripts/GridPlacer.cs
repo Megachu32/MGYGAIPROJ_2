@@ -34,6 +34,13 @@ public class GridPlacer : MonoBehaviour
     private bool isPlayer1Turn = true;
     private bool isAIThinking = false;
 
+    //this is boolean to set the aponent type
+    private bool humanIsPlaying = false; 
+    private bool easyAIIsPlaying = false; 
+    private bool normalAIIsPlaying = false; 
+
+    private bool playAsRed = true; 
+
     public bool canPlacePieces = false;
 
     
@@ -88,6 +95,38 @@ public class GridPlacer : MonoBehaviour
         Debug.Log("The board has been cleared!");
     }
 
+    // function to set human vs human
+    public void humanMove(){   
+        humanIsPlaying = true;
+    }
+
+    // function to set easy ai vs human
+    public void easyAIMove(){   
+        easyAIIsPlaying = true;
+    }
+
+    // function to set normal ai vs human
+    public void normalAIMove(){   
+        normalAIIsPlaying = true;
+    }
+
+    public void clearPlayingModes(){
+        humanIsPlaying = false;
+        easyAIIsPlaying = false;
+        normalAIIsPlaying = false;
+    }
+
+    // function to choose red for the game piece
+    public void chooseRed(){
+        playAsRed = true;
+    }
+
+    // function to choose black for the game piece
+    public void chooseBlack(){
+        timerScript.SwitchTurn(); // Start the timer for the current player as soon as they place a piece
+        playAsRed = false;
+    }
+
     void Update()
     {
         if (!canPlacePieces) 
@@ -95,7 +134,8 @@ public class GridPlacer : MonoBehaviour
             return;
         }
             
-        if (isPlayer1Turn)
+        // check if it's human vs human    
+        if (humanIsPlaying)
         {
             // --- HUMAN TURN ---
             // Only check for mouse clicks if it's Player 1's turn
@@ -104,13 +144,48 @@ public class GridPlacer : MonoBehaviour
                 PlacePieceAtMouse();
             }
         }
-        else
+
+        // check if it's human vs ai
+        else if (easyAIIsPlaying || normalAIIsPlaying) 
         {
-            // --- AI TURN ---
-            // No mouse click required! Just make sure it isn't already thinking.
-            if (!isAIThinking)
-            {
-                StartCoroutine(WaitAndMakeAIMove());
+            if(playAsRed){
+                // switch the turn based on playing what color
+                if (isPlayer1Turn)
+                {
+                    // --- HUMAN TURN ---
+                    // Only check for mouse clicks if it's Player 1's turn
+                    if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                    {
+                        PlacePieceAtMouse();
+                    }
+                }
+                else{
+                    // --- AI TURN ---
+                    // No mouse click required! Just make sure it isn't already thinking.
+                    if (!isAIThinking)
+                    {
+                        StartCoroutine(WaitAndMakeAIMove());
+                    }
+                }
+            }
+            else{
+                if (!isPlayer1Turn)
+                {
+                    // --- HUMAN TURN ---
+                    // Only check for mouse clicks if it's Player 2's turn
+                    if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                    {
+                        PlacePieceAtMouse();
+                    }
+                }
+                else{
+                    // --- AI TURN ---
+                    // No mouse click required! Just make sure it isn't already thinking.
+                    if (!isAIThinking)
+                    {
+                        StartCoroutine(WaitAndMakeAIMove());
+                    }
+                }
             }
         }
     }
@@ -340,7 +415,7 @@ public class GridPlacer : MonoBehaviour
     void aiMove()
     {
         // It is the AI's turn, so the ID is automatically 2.
-        int currentPlayerID = 2;
+        int currentPlayerID = isPlayer1Turn ? 1 : 2;
 
         //making the list for avalable move
         List<Vector2Int> validMoves = new List<Vector2Int>();
@@ -383,7 +458,7 @@ public class GridPlacer : MonoBehaviour
         timerScript.SwitchTurn();
 
         Vector3 snapPosition = gameGrid.GetCellCenterWorld(chosenCell3D);
-        GameObject currentPrefabToPlace = player2Prefab; // It's the AI, so always use Player 2's prefab
+        GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab; // It's the AI, so always use Player 2's prefab
         GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
 
         if (piecesGroup != null)
@@ -396,6 +471,6 @@ public class GridPlacer : MonoBehaviour
         CheckMigoYogo(chosenCell2D, currentPlayerID);
 
         // Give the turn back to Player 1
-        isPlayer1Turn = true;
+        isPlayer1Turn = !isPlayer1Turn;
     }
 }

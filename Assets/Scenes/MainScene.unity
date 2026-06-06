@@ -2160,6 +2160,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8736852ec2cebb14ca3b57d5e483ab85, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ui_script
+  myDropdown: {fileID: 1305014618}
   targetScript: {fileID: 1132226395}
   targetGridPlacer: {fileID: 1179187504}
 --- !u!1 &1147114281
