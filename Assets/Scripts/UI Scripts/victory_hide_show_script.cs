@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro; 
 
-public class Victory_Hide_Show : MonoBehaviour
+public class victory_hide_show_script : MonoBehaviour
 {
 
     

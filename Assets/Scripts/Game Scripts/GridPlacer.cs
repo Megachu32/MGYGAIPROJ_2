@@ -28,6 +28,7 @@ public class GridPlacer : MonoBehaviour
 
     [Header("Outside Scripts")]
     public timer_script timerScript;
+    public victory_hide_show_script victoryScript;
 
 
     private bool isPlayer1Turn = true;
@@ -289,6 +290,29 @@ public class GridPlacer : MonoBehaviour
 
                 // Use brackets [] instead of .Add() to safely update the memory without errors
                 gridData[startPos] = new PieceData(playerID, specialPiece, true);
+            }
+
+            int yugoCount = 0;
+
+            // check if all yugos
+            foreach (Vector2Int pos in matchingCells)
+            {
+                if (gridData.ContainsKey(pos))
+                {
+                    if (gridData[pos].isSpecialPiece == true) 
+                    {
+                        yugoCount++;             
+                    }          
+                }
+            }
+
+            // check if theres's 4 yugos if yes win and pause the game
+            if(yugoCount >= 4)
+            {
+                Debug.Log(playerID == 1 ? "🔥🔥🔥 AIGO 🔥🔥🔥" : "🔥🔥🔥 AIGO 🔥🔥🔥");
+                DisablePlacing();
+                timerScript.PauseTimers();
+                victoryScript.DisplayVictoryScreen((playerID == 1) ? true : false, "Win by Migo Yogo Combo"); // Show the victory screen with the appropriate message
             }
 
             return true; 

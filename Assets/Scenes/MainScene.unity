@@ -2352,8 +2352,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 02397d7660bcde64bb34d161f370c454, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Victory_Hide_Show
-  winnerText: {fileID: 0}
-  reasonText: {fileID: 0}
+  winnerText: {fileID: 706269881}
+  reasonText: {fileID: 968465384}
 --- !u!114 &1150355756
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2505,7 +2505,8 @@ MonoBehaviour:
   minBounds: {x: -4, y: -4}
   maxBounds: {x: 3, y: 3}
   timerScript: {fileID: 1132226395}
-  canPlacePieces: 0
+  victoryScript: {fileID: 1150355755}
+  canPlacePieces: 1
 --- !u!1 &1218973668
 GameObject:
   m_ObjectHideFlags: 0
