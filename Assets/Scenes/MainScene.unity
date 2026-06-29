@@ -2499,10 +2499,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GridPlacer
   gameGrid: {fileID: 148943853}
   piecesGroup: {fileID: 2079306070}
-  player1Prefab: {fileID: 3338288951691463429, guid: 5266b95ba2fd6c542962017bc2fcc60e, type: 3}
-  player2Prefab: {fileID: 2654619559828167164, guid: b4c66e3b3b153004e9c3a276c329e61f, type: 3}
-  player1SpecialPrefab: {fileID: 4018098515706953191, guid: 125a19ffe633fee4bb9120a5879922df, type: 3}
-  player2SpecialPrefab: {fileID: 5407974671383454253, guid: be77ee952179ca14db6f9e4436a47e98, type: 3}
+  player1Prefab: {fileID: 9062385868939083350, guid: e45e9a226ae14e84fb77119d61737e6e, type: 3}
+  player2Prefab: {fileID: 6858905135615561198, guid: bcabb42e2a21cc54b970ebca3a96311d, type: 3}
+  player1SpecialPrefab: {fileID: 6961862805292499069, guid: 0d3efdbe77b709140803ff04053dc1c1, type: 3}
+  player1SpecialPrefabO: {fileID: 2773341502831045242, guid: 64ebd1a27d20b2d40a23818b7c263238, type: 3}
+  player1SpecialPrefabT: {fileID: 3231360070377564014, guid: 95e03a3f2a1a216478bca2b8d4089b72, type: 3}
+  player1SpecialPrefabS: {fileID: 8556196917157939719, guid: cefa7386b233000498b36e8a5fb2a797, type: 3}
+  player2SpecialPrefab: {fileID: 1679282133858958077, guid: 54c6702f28484c74a868653f0dbacfe3, type: 3}
+  player2SpecialPrefabO: {fileID: 4964446881607772647, guid: 68f958d67ac779e43b7730b0a7a177d4, type: 3}
+  player2SpecialPrefabT: {fileID: 2926457372236275557, guid: 62d4d8be90def63428007e03e9da8937, type: 3}
+  player2SpecialPrefabS: {fileID: 7400411163219169981, guid: c646f8eacc82db74385d8ec09362f026, type: 3}
   minBounds: {x: -4, y: -4}
   maxBounds: {x: 3, y: 3}
   timerScript: {fileID: 1132226395}

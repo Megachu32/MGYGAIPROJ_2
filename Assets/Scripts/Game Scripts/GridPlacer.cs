@@ -19,8 +19,16 @@ public class GridPlacer : MonoBehaviour
     [Header("Special 'Migo Yogo' Prefabs")]
     [Tooltip("The special piece Player 1 gets for connecting 4")]
     public GameObject player1SpecialPrefab;
+    public GameObject player1SpecialPrefabO;
+    public GameObject player1SpecialPrefabT;
+    public GameObject player1SpecialPrefabS;
+
     [Tooltip("The special piece Player 2 gets for connecting 4")]
     public GameObject player2SpecialPrefab;
+    public GameObject player2SpecialPrefabO;
+    public GameObject player2SpecialPrefabT;
+    public GameObject player2SpecialPrefabS;
+
 
     [Header("Grid Boundaries")]
     public Vector2Int minBounds = new Vector2Int(-5, -5);
@@ -51,12 +59,14 @@ public class GridPlacer : MonoBehaviour
         public int playerID;
         public GameObject pieceObject;
         public bool isSpecialPiece;
+        public int pieceValue; // to check if the piece is a more valuable yugo
 
-        public PieceData(int id, GameObject obj, bool isSpecial = false) // added special pieces for easier checking later
+        public PieceData(int id, GameObject obj, bool isSpecial = false, int value = 1) // added special pieces for easier checking later
         {
             playerID = id;
             pieceObject = obj;
             isSpecialPiece = isSpecial;
+            pieceValue = value;
         }
     }
 
@@ -133,6 +143,9 @@ public class GridPlacer : MonoBehaviour
         {
             return;
         }
+
+        // Check if the board is full and calculate the winner if it is
+        CheckGameOverAndCalculateWinner();
             
         // check if it's human vs human    
         if (humanIsPlaying)
@@ -250,7 +263,7 @@ public class GridPlacer : MonoBehaviour
         }
 
         // Save BOTH the Player ID and the spawned piece into our Dictionary
-        gridData.Add(cellCoordinate2D, new PieceData(currentPlayerID, spawnedPiece, false));
+        gridData.Add(cellCoordinate2D, new PieceData(currentPlayerID, spawnedPiece, false, 1));
 
         // Check for 4 in a row!
         CheckMigoYogo(cellCoordinate2D, currentPlayerID);
@@ -316,84 +329,135 @@ public class GridPlacer : MonoBehaviour
     // function for checking if a piece can be transformed into a yugo
     void CheckMigoYogo(Vector2Int placedPos, int playerID)
     {
-        // 1. Remove the "if (...) return;" part from these lines! 
-        // This forces the game to check EVERY direction, allowing crosses/combos.
-        CheckAndTransformLine(placedPos, playerID, Vector2Int.right);
-        CheckAndTransformLine(placedPos, playerID, Vector2Int.up);
-        CheckAndTransformLine(placedPos, playerID, new Vector2Int(1, 1));
-        CheckAndTransformLine(placedPos, playerID, new Vector2Int(1, -1));
-    }
+        // 1. Use a HashSet to gather all connected pieces without duplicating the center piece
+        HashSet<Vector2Int> cellsToTransform = new HashSet<Vector2Int>();
 
-    // function to check a line of migo and transform it into a yugo
-    bool CheckAndTransformLine(Vector2Int startPos, int playerID, Vector2Int direction)
-    {
-        List<Vector2Int> matchingCells = new List<Vector2Int>();
-        
-        matchingCells.Add(startPos);
-        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, direction));
-        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, -direction));
+        // 2. Gather connected pieces in all 4 directions
+        GatherPiecesInLine(placedPos, playerID, Vector2Int.right, cellsToTransform);
+        GatherPiecesInLine(placedPos, playerID, Vector2Int.up, cellsToTransform);
+        GatherPiecesInLine(placedPos, playerID, new Vector2Int(1, 1), cellsToTransform);
+        GatherPiecesInLine(placedPos, playerID, new Vector2Int(1, -1), cellsToTransform);
 
-        if (matchingCells.Count >= 4)
+        // 3. Now check the TOTAL accumulated Migos. Is the cluster 4 or more?
+        if (cellsToTransform.Count >= 4)
         {
-            Debug.Log(playerID == 1 ? "⭐⭐⭐ RED MIGO! ⭐⭐⭐" : "⭐⭐⭐ YUGO! ⭐⭐⭐");
-
-            foreach (Vector2Int pos in matchingCells)
-            {
-                if (gridData.ContainsKey(pos))
-                {
-                    if (gridData[pos].isSpecialPiece == false) 
-                    {
-                        Destroy(gridData[pos].pieceObject); 
-                        gridData.Remove(pos);               
-                    }          
-                }
-            }
-
-            // --- NEW: THE DOUBLE-SPAWN FIX ---
-            // If a previous combo line already spawned a special piece here, we skip this step!
-            if (!gridData.ContainsKey(startPos) || gridData[startPos].isSpecialPiece == false)
-            {
-                Vector3 snapPos = gameGrid.GetCellCenterWorld(new Vector3Int(startPos.x, startPos.y, 0));
-                GameObject specialPrefab = (playerID == 1) ? player1SpecialPrefab : player2SpecialPrefab;
-                GameObject specialPiece = Instantiate(specialPrefab, snapPos, Quaternion.identity);
-
-                // --- NEW: PARENT THE SPECIAL PIECE ---
-                if (piecesGroup != null)
-                {
-                    specialPiece.transform.SetParent(piecesGroup);
-                }
-
-                // Use brackets [] instead of .Add() to safely update the memory without errors
-                gridData[startPos] = new PieceData(playerID, specialPiece, true);
-            }
-
+            Debug.Log(playerID == 1 ? "⭐⭐⭐ RED MIGO COMBO! ⭐⭐⭐" : "⭐⭐⭐ BLACK MIGO COMBO! ⭐⭐⭐");
+            
+            int totalMigoCount = 0;
             int yugoCount = 0;
 
-            // check if all yugos
-            foreach (Vector2Int pos in matchingCells)
+            // 4. Loop through our gathered pieces to count and destroy them
+            foreach (Vector2Int pos in cellsToTransform)
             {
                 if (gridData.ContainsKey(pos))
                 {
                     if (gridData[pos].isSpecialPiece == true) 
                     {
                         yugoCount++;             
+                    }
+                    else 
+                    {
+                        totalMigoCount++;
+                        Destroy(gridData[pos].pieceObject); 
+                        gridData.Remove(pos);
                     }          
                 }
             }
 
-            // check if theres's 4 yugos if yes win and pause the game
-            if(yugoCount >= 4)
+            // 5. Check if they connected 4 Yugos to win!
+            if (yugoCount >= 4)
             {
-                Debug.Log(playerID == 1 ? "🔥🔥🔥 AIGO 🔥🔥🔥" : "🔥🔥🔥 AIGO 🔥🔥🔥");
+                Debug.Log("🔥🔥🔥 AIGO 🔥🔥🔥");
                 DisablePlacing();
                 timerScript.PauseTimers();
-                victoryScript.DisplayVictoryScreen((playerID == 1) ? true : false, "Win by Migo Yogo Combo"); // Show the victory screen with the appropriate message
+                victoryScript.DisplayVictoryScreen((playerID == 1) ? true : false, "Win by Migo Yogo Combo");
+                return; // Stop here, the game is over
             }
 
-            return true; 
-        }
+            // 6. Spawn the special Yugo piece exactly where the player just clicked
+            Vector3 snapPos = gameGrid.GetCellCenterWorld(new Vector3Int(placedPos.x, placedPos.y, 0));
+            GameObject specialPrefab = (playerID == 1) ? player1SpecialPrefab : player2SpecialPrefab;
 
-        return false; 
+            // for changing the special piece look based on the number of migos connected
+            if (playerID == 1)
+            {
+                if (totalMigoCount <= 16 && totalMigoCount > 12)
+                {
+                    specialPrefab = player1SpecialPrefabS;
+                }
+                else if (totalMigoCount <= 12 && totalMigoCount > 8)
+                {
+                    specialPrefab = player1SpecialPrefabT;
+                }
+                else if (totalMigoCount <= 8 && totalMigoCount > 4)
+                {
+                    specialPrefab = player1SpecialPrefabO;
+                }
+                else if (totalMigoCount <= 4)
+                {
+                    specialPrefab = player1SpecialPrefab;
+                }
+            }
+            else
+            {
+                if (totalMigoCount <= 16 && totalMigoCount > 12)
+                {
+                    specialPrefab = player2SpecialPrefabS;
+                }
+                else if (totalMigoCount <= 12 && totalMigoCount > 8)
+                {
+                    specialPrefab = player2SpecialPrefabT;
+                }
+                else if (totalMigoCount <= 8 && totalMigoCount > 4)
+                {
+                    specialPrefab = player2SpecialPrefabO;
+                }
+                else if (totalMigoCount <= 4)
+                {
+                    specialPrefab = player2SpecialPrefab;
+                }
+            }
+
+            
+            GameObject specialPiece = Instantiate(specialPrefab, snapPos, Quaternion.identity);
+
+            // Parent the special piece
+            if (piecesGroup != null)
+            {
+                specialPiece.transform.SetParent(piecesGroup);
+            }
+
+            // Save the newly accumulated value into the grid memory!
+            gridData[placedPos] = new PieceData(playerID, specialPiece, true, totalMigoCount);
+        }
+    }
+
+    // Helper function to find connected pieces and add them to our HashSet
+    // Looks in a specific direction (like Left/Right) and collects all matching pieces into a list
+    void GatherPiecesInLine(Vector2Int startPos, int playerID, Vector2Int direction, HashSet<Vector2Int> cellsToTransform)
+    {
+        // Create a temporary list to hold the pieces we find in this specific line
+        List<Vector2Int> matchingCells = new List<Vector2Int>();
+        
+        // 1. Add the piece we just placed down
+        matchingCells.Add(startPos);
+        
+        // 2. Look forward and add any matching pieces we find
+        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, direction));
+        
+        // 3. Look backward and add any matching pieces we find
+        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, -direction));
+
+        // --- THE FIX IS HERE ---
+        // ONLY add these pieces to our master list IF this specific straight line has 4 or more pieces.
+        // This completely prevents triangles, L-shapes, or random clusters from transforming!
+        if (matchingCells.Count >= 4)
+        {
+            foreach (Vector2Int cell in matchingCells)
+            {
+                cellsToTransform.Add(cell);
+            }
+        }
     }
 
     // helper function to get all pieces in a direction
@@ -414,7 +478,7 @@ public class GridPlacer : MonoBehaviour
 
     void aiMove()
     {
-        // It is the AI's turn, so the ID is automatically 2.
+        // It is the AI's turn if the player choose to play black it goes first as red
         int currentPlayerID = isPlayer1Turn ? 1 : 2;
 
         //making the list for avalable move
@@ -458,7 +522,7 @@ public class GridPlacer : MonoBehaviour
         timerScript.SwitchTurn();
 
         Vector3 snapPosition = gameGrid.GetCellCenterWorld(chosenCell3D);
-        GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab; // It's the AI, so always use Player 2's prefab
+        GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab; // the ai can play black or red based on the player's choice
         GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
 
         if (piecesGroup != null)
@@ -472,5 +536,81 @@ public class GridPlacer : MonoBehaviour
 
         // Give the turn back to Player 1
         isPlayer1Turn = !isPlayer1Turn;
+    }
+
+    // Function to check if the game is over and tally special piece points
+    void CheckGameOverAndCalculateWinner()
+    {
+        // If there is still at least one valid move anywhere on the board, 
+        // we do nothing and let the game continue.
+        if (IsAnyValidMoveAvailable())
+        {
+            return; 
+        }
+
+        // If we make it past the return statement above, it means no moves are left.
+        Debug.Log("No valid moves left on the board! Calculating points...");
+
+        int player1SpecialPoints = 0;
+        int player2SpecialPoints = 0;
+
+        foreach (KeyValuePair<Vector2Int, PieceData> entry in gridData)
+        {
+            PieceData piece = entry.Value;
+
+            if (piece.isSpecialPiece)
+            {
+                if (piece.playerID == 1)
+                {
+                    player1SpecialPoints += piece.pieceValue;
+                }
+                else if (piece.playerID == 2)
+                {
+                    player2SpecialPoints += piece.pieceValue;
+                }
+            }
+        }
+
+        Debug.Log($"Player 1 Points: {player1SpecialPoints} | Player 2 Points: {player2SpecialPoints}");
+
+        DisablePlacing();
+        timerScript.PauseTimers();
+
+        if (player1SpecialPoints > player2SpecialPoints)
+        {
+            victoryScript.DisplayVictoryScreen(true, "No Moves Left! Player 1 Wins by Points!");
+        }
+        else if (player2SpecialPoints > player1SpecialPoints)
+        {
+            victoryScript.DisplayVictoryScreen(false, "No Moves Left! Player 2 Wins by Points!");
+        }
+        else
+        {
+            victoryScript.DisplayVictoryScreen(true, "No Moves Left! It's a Tie!"); 
+        }
+    }
+
+    // Helper function to check if ANY valid moves remain on the board
+    bool IsAnyValidMoveAvailable()
+    {
+        // Loop through every possible space on the grid
+        for (int x = minBounds.x; x <= maxBounds.x; x++) 
+        {
+            for (int y = minBounds.y; y <= maxBounds.y; y++)
+            {
+                Vector2Int potentialCell2D = new Vector2Int(x, y);
+
+                // First, check if the cell is completely empty
+                if (!gridData.ContainsKey(potentialCell2D))
+                {
+                    // Check if Player 1 OR Player 2 can safely place a piece here
+                    if (!WouldCreateLineTooLong(potentialCell2D, 1) || !WouldCreateLineTooLong(potentialCell2D, 2))
+                    {
+                        return true; // Early return: We found a valid move, stop checking!
+                    }
+                }
+            }
+        }
+        return false; // Checked every single tile and found 0 valid moves
     }
 }
