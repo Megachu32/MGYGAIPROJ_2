@@ -1,6 +1,6 @@
 using UnityEngine;
 using TMPro; 
-
+using System.Threading.Tasks; // <--- ADD THIS EXACT LINE
 public class timer_script : MonoBehaviour
 {
     [Header("Timer Settings")]

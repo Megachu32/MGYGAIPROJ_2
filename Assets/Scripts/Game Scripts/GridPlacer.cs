@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections.Generic;
+using System.Threading.Tasks; // <--- ADD THIS EXACT LINE
 
 public class GridPlacer : MonoBehaviour
 {
@@ -55,7 +56,7 @@ public class GridPlacer : MonoBehaviour
     
 
     // A custom container to hold both the Player ID and the actual piece on the board
-    private class PieceData
+    public class PieceData
     {
         public int playerID;
         public GameObject pieceObject;
@@ -71,8 +72,19 @@ public class GridPlacer : MonoBehaviour
         }
     }
 
+    public class MoveInfo
+    {
+        public Vector2Int position; // Where the piece was placed
+        public int player;          // Who placed it
+        public bool resultsInWin;   // NEW: Tells the AI if this move triggers an AIGO!
+
+        // A list to track pieces that were captured, removed, or flipped during this move.
+        public Dictionary<Vector2Int, PieceData> alteredPieces = new Dictionary<Vector2Int, PieceData>();
+    }
+
     // Our Dictionary now stores our custom PieceData instead of just an integer
     private Dictionary<Vector2Int, PieceData> gridData = new Dictionary<Vector2Int, PieceData>();
+    private Dictionary<Vector2Int, PieceData> gridDataSimulate = new Dictionary<Vector2Int, PieceData>();
 
     public void EnablePlacing()
     {
@@ -99,6 +111,7 @@ public class GridPlacer : MonoBehaviour
 
         // 2. Wipe the internal memory so the game knows the spaces are empty again
         gridData.Clear();
+        // gridDataSimulate.Clear();
 
         // 3. Reset the turn back to Player 1
         isPlayer1Turn = true;
@@ -159,8 +172,8 @@ public class GridPlacer : MonoBehaviour
             }
         }
 
-        // check if it's human vs ai
-        else if (easyAIIsPlaying || normalAIIsPlaying) 
+        // check if it's human vs ai easy
+        else if (easyAIIsPlaying) 
         {
             if(playAsRed){
                 // switch the turn based on playing what color
@@ -202,6 +215,49 @@ public class GridPlacer : MonoBehaviour
                 }
             }
         }
+        // check if it's human vs ai normal
+        else if (normalAIIsPlaying) 
+        {
+            if(playAsRed){
+                // switch the turn based on playing what color
+                if (isPlayer1Turn)
+                {
+                    // --- HUMAN TURN ---
+                    // Only check for mouse clicks if it's Player 1's turn
+                    if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                    {
+                        PlacePieceAtMouse();
+                    }
+                }
+                else{
+                    // --- AI TURN ---
+                    // No mouse click required! Just make sure it isn't already thinking.
+                    if (!isAIThinking)
+                    {
+                        aiMoveAdvance();
+                    }
+                }
+            }
+            else{
+                if (!isPlayer1Turn)
+                {
+                    // --- HUMAN TURN ---
+                    // Only check for mouse clicks if it's Player 2's turn
+                    if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                    {
+                        PlacePieceAtMouse();
+                    }
+                }
+                else{
+                    // --- AI TURN ---
+                    // No mouse click required! Just make sure it isn't already thinking.
+                    if (!isAIThinking)
+                    {
+                        aiMoveAdvance();
+                    }
+                }
+            }
+        }
     }
 
     //adding delay and calling the ai move function
@@ -212,6 +268,17 @@ public class GridPlacer : MonoBehaviour
         yield return new WaitForSeconds(0.75f); // Wait for a fraction of a second
         
         aiMove(); // Execute the move
+        
+        isAIThinking = false; // Unlock for the next turn
+    }
+
+    System.Collections.IEnumerator WaitAndMakeAIMoveAdvance()
+    {
+        isAIThinking = true; // Lock the AI so it doesn't trigger again
+        
+        yield return new WaitForSeconds(0.75f); // Wait for a fraction of a second
+        
+        aiMoveAdvance(); // Execute the move    
         
         isAIThinking = false; // Unlock for the next turn
     }
@@ -247,7 +314,7 @@ public class GridPlacer : MonoBehaviour
         // ==========================================
         // --- NEW RULE: BLOCK LINES LONGER THAN 4 ---
         // ==========================================
-        if (WouldCreateLineTooLong(cellCoordinate2D, currentPlayerID))
+        if (WouldCreateLineTooLong(cellCoordinate2D, currentPlayerID, gridData))
         {
             Debug.Log("Placement blocked! You cannot make a line longer than 4.");
             return; // This completely stops the placement. The turn doesn't pass.
@@ -267,6 +334,7 @@ public class GridPlacer : MonoBehaviour
 
         // Save BOTH the Player ID and the spawned piece into our Dictionary
         gridData.Add(cellCoordinate2D, new PieceData(currentPlayerID, spawnedPiece, false, 1));
+        // gridDataSimulate.Add(cellCoordinate2D, new PieceData(currentPlayerID, spawnedPiece, false, 1));
 
         // Check for 4 in a row!
         CheckMigoYogo(cellCoordinate2D, currentPlayerID);
@@ -282,41 +350,41 @@ public class GridPlacer : MonoBehaviour
     }
 
     // function to check if a line is more than 4 long
-    bool WouldCreateLineTooLong(Vector2Int testPos, int playerID)
+    bool WouldCreateLineTooLong(Vector2Int testPos, int playerID, Dictionary<Vector2Int, PieceData> gridToUse)
     {
         // Check all 4 main axes (Horizontal, Vertical, Diagonal 1, Diagonal 2)
         // If any of them result in a line greater than 4, return true (which means YES, it's too long)
-        if (GetPotentialLineLength(testPos, playerID, Vector2Int.right) > 4) return true;
-        if (GetPotentialLineLength(testPos, playerID, Vector2Int.up) > 4) return true;
-        if (GetPotentialLineLength(testPos, playerID, new Vector2Int(1, 1)) > 4) return true;
-        if (GetPotentialLineLength(testPos, playerID, new Vector2Int(1, -1)) > 4) return true;
+        if (GetPotentialLineLength(testPos, playerID, Vector2Int.right, gridToUse) > 4) return true;
+        if (GetPotentialLineLength(testPos, playerID, Vector2Int.up, gridToUse) > 4) return true;
+        if (GetPotentialLineLength(testPos, playerID, new Vector2Int(1, 1), gridToUse) > 4) return true;
+        if (GetPotentialLineLength(testPos, playerID, new Vector2Int(1, -1), gridToUse) > 4) return true;
 
         return false; // Safe to place!
     }
 
     // function to check how long a line would be
-    int GetPotentialLineLength(Vector2Int startPos, int playerID, Vector2Int direction)
+    int GetPotentialLineLength(Vector2Int startPos, int playerID, Vector2Int direction, Dictionary<Vector2Int, PieceData> gridToUse)
     {
         // Start at 1 to count the piece we are *about* to place
         int totalLength = 1;
 
         // Count existing pieces in the forward direction
-        totalLength += CountPiecesInDirection(startPos, playerID, direction);
+        totalLength += CountPiecesInDirection(startPos, playerID, direction, gridToUse);
         
         // Count existing pieces in the backward direction
-        totalLength += CountPiecesInDirection(startPos, playerID, -direction);
+        totalLength += CountPiecesInDirection(startPos, playerID, -direction, gridToUse);
 
         return totalLength;
     }
 
     // Helper function to count pieces in a specific direction
-    int CountPiecesInDirection(Vector2Int startPos, int playerID, Vector2Int direction)
+    int CountPiecesInDirection(Vector2Int startPos, int playerID, Vector2Int direction, Dictionary<Vector2Int, PieceData> gridToUse)
     {
         int count = 0;
         Vector2Int checkPos = startPos + direction;
 
         // Keep walking in the direction as long as we find a matching piece
-        while (gridData.ContainsKey(checkPos) && gridData[checkPos].playerID == playerID)
+        while (gridToUse.ContainsKey(checkPos) && gridToUse[checkPos].playerID == playerID)
         {
             count++;
             checkPos += direction; 
@@ -336,10 +404,10 @@ public class GridPlacer : MonoBehaviour
         HashSet<Vector2Int> cellsToTransform = new HashSet<Vector2Int>();
 
         // 2. Gather connected pieces in all 4 directions
-        GatherPiecesInLine(placedPos, playerID, Vector2Int.right, cellsToTransform);
-        GatherPiecesInLine(placedPos, playerID, Vector2Int.up, cellsToTransform);
-        GatherPiecesInLine(placedPos, playerID, new Vector2Int(1, 1), cellsToTransform);
-        GatherPiecesInLine(placedPos, playerID, new Vector2Int(1, -1), cellsToTransform);
+        GatherPiecesInLine(placedPos, playerID, Vector2Int.right, cellsToTransform, gridData);
+        GatherPiecesInLine(placedPos, playerID, Vector2Int.up, cellsToTransform, gridData);
+        GatherPiecesInLine(placedPos, playerID, new Vector2Int(1, 1), cellsToTransform, gridData);
+        GatherPiecesInLine(placedPos, playerID, new Vector2Int(1, -1), cellsToTransform, gridData);
 
         // 3. Now check the TOTAL accumulated Migos. Is the cluster 4 or more?
         if (cellsToTransform.Count >= 4)
@@ -367,8 +435,10 @@ public class GridPlacer : MonoBehaviour
                 }
             }
 
+            Debug.Log("Total Yugos connected: " + yugoCount);
+
             // 5. Check if they connected 4 Yugos to win!
-            if (yugoCount >= 4)
+            if (yugoCount + 1 >= 4)
             {
                 Debug.Log("🔥🔥🔥 AIGO 🔥🔥🔥");
                 DisablePlacing();
@@ -448,7 +518,7 @@ public class GridPlacer : MonoBehaviour
 
     // Helper function to find connected pieces and add them to our HashSet
     // Looks in a specific direction (like Left/Right) and collects all matching pieces into a list
-    void GatherPiecesInLine(Vector2Int startPos, int playerID, Vector2Int direction, HashSet<Vector2Int> cellsToTransform)
+    void GatherPiecesInLine(Vector2Int startPos, int playerID, Vector2Int direction, HashSet<Vector2Int> cellsToTransform, Dictionary<Vector2Int, PieceData> gridToUse)
     {
         // Create a temporary list to hold the pieces we find in this specific line
         List<Vector2Int> matchingCells = new List<Vector2Int>();
@@ -457,10 +527,10 @@ public class GridPlacer : MonoBehaviour
         matchingCells.Add(startPos);
         
         // 2. Look forward and add any matching pieces we find
-        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, direction));
+        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, direction, gridToUse));
         
         // 3. Look backward and add any matching pieces we find
-        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, -direction));
+        matchingCells.AddRange(GetPiecesInDirection(startPos, playerID, -direction, gridToUse));
 
         // --- THE FIX IS HERE ---
         // ONLY add these pieces to our master list IF this specific straight line has 4 or more pieces.
@@ -475,13 +545,13 @@ public class GridPlacer : MonoBehaviour
     }
 
     // helper function to get all pieces in a direction
-    List<Vector2Int> GetPiecesInDirection(Vector2Int startPos, int playerID, Vector2Int direction)
+    List<Vector2Int> GetPiecesInDirection(Vector2Int startPos, int playerID, Vector2Int direction, Dictionary<Vector2Int, PieceData> gridToUse)
     {
         List<Vector2Int> foundCells = new List<Vector2Int>();
         Vector2Int checkPos = startPos + direction;
 
-        while (gridData.ContainsKey(checkPos) && 
-               gridData[checkPos].playerID == playerID)
+        while (gridToUse.ContainsKey(checkPos) && 
+               gridToUse[checkPos].playerID == playerID)
         {
             foundCells.Add(checkPos);
             checkPos += direction; 
@@ -489,6 +559,67 @@ public class GridPlacer : MonoBehaviour
 
         return foundCells;
     }
+
+    void CheckMigoYogoSimulation(MoveInfo info)
+    {
+        HashSet<Vector2Int> cellsToTransform = new HashSet<Vector2Int>();
+
+        // 1. Gather pieces using the SIMULATED grid
+        GatherPiecesInLine(info.position, info.player, Vector2Int.right, cellsToTransform, gridDataSimulate);
+        GatherPiecesInLine(info.position, info.player, Vector2Int.up, cellsToTransform, gridDataSimulate);
+        GatherPiecesInLine(info.position, info.player, new Vector2Int(1, 1), cellsToTransform, gridDataSimulate);
+        GatherPiecesInLine(info.position, info.player, new Vector2Int(1, -1), cellsToTransform, gridDataSimulate);
+
+        // 2. Check if a transformation happens
+        if (cellsToTransform.Count >= 4)
+        {
+            int totalMigoCount = 0;
+            int yugoCount = 0;
+
+            foreach (Vector2Int pos in cellsToTransform)
+            {
+                if (gridDataSimulate.ContainsKey(pos))
+                {
+                    // RECORD-KEEPING: If this piece existed BEFORE this turn, log it on the receipt
+                    // We skip info.position because that piece was just placed this turn
+                    if (pos != info.position) 
+                    {
+                        info.alteredPieces.Add(pos, gridDataSimulate[pos]);
+                    }
+
+                    // Count types
+                    if (gridDataSimulate[pos].isSpecialPiece == true) 
+                    {
+                        yugoCount++;             
+                    }
+                    else 
+                    {
+                        totalMigoCount++;
+                    }
+
+                    // Destroy the simulated piece
+                    gridDataSimulate.Remove(pos);
+                }
+            }
+
+            // 3. Did they connect 4 Yugos? Flag a win for the AI!
+            if (yugoCount >= 4)
+            {
+                info.resultsInWin = true; 
+                return; // Stop here, the game is over
+            }
+
+            // 4. Place the simulated Special Yugo piece
+            int totalConnectedPieces = totalMigoCount + yugoCount;
+            
+            // Notice we pass 'null' for the GameObject, but 'true' for isSpecialPiece
+            gridDataSimulate[info.position] = new PieceData(info.player, null, true, totalConnectedPieces);
+        }
+    }
+
+    // ==========================================
+    // --- THE AI LOGIC ---
+    // ==========================================
 
     void aiMove()
     {
@@ -513,7 +644,7 @@ public class GridPlacer : MonoBehaviour
                 if (gridData.ContainsKey(potentialCell2D)) continue;
 
                 // Must NOT break the "lines longer than 4" rule
-                if (WouldCreateLineTooLong(potentialCell2D, currentPlayerID)) continue;
+                if (WouldCreateLineTooLong(potentialCell2D, currentPlayerID, gridData)) continue;
 
                 // If it passes all checks, add it to our list of possible moves
                 validMoves.Add(potentialCell2D);
@@ -548,12 +679,352 @@ public class GridPlacer : MonoBehaviour
         }
 
         gridData.Add(chosenCell2D, new PieceData(currentPlayerID, spawnedPiece, false));
+        // gridDataSimulate.Add(chosenCell2D, new PieceData(currentPlayerID, spawnedPiece, false));
 
         CheckMigoYogo(chosenCell2D, currentPlayerID);
 
         // Give the turn back to Player 1
         isPlayer1Turn = !isPlayer1Turn;
     }
+
+    async void aiMoveAdvance()
+    {
+        isAIThinking = true; // Lock the board so the human can't click
+    
+        // Wait for 0.75 seconds (Async version of WaitForSeconds)
+        await Task.Delay(750); 
+
+        // 1. --- HIRE THE BACKGROUND WORKER ---
+        // Task.Run pushes the heavy FindTheBestMove() math off the Main Thread.
+        // The "await" keyword tells this specific function to pause and wait for the result,
+        // BUT it allows the rest of Unity (like your timers and graphics) to keep running perfectly!
+        Vector2Int bestMove = await Task.Run(() => FindTheBestMove());
+
+        // 2. Check if the AI returned our secret "no moves left" signal (-999)
+        if (bestMove.x == -999)
+        {
+            CheckGameOverAndCalculateWinner();
+            Debug.Log("AI has no valid moves left! The board is full or blocked.");
+            return; 
+        }
+
+        // 3. --- WE HAVE A MOVE! EXECUTE IT VISUALLY ---
+        int aiID = isPlayer1Turn ? 1 : 2;
+
+        Vector3Int chosenCell3D = new Vector3Int(bestMove.x, bestMove.y, 0);
+        historyScript.AddMove(bestMove.x, bestMove.y, 0);
+        timerScript.SwitchTurn();
+
+        Vector3 snapPosition = gameGrid.GetCellCenterWorld(chosenCell3D);
+        GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab; 
+        GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
+
+        if (piecesGroup != null)
+        {
+            spawnedPiece.transform.SetParent(piecesGroup);
+        }
+
+        // Add it to the REAL visual board memory
+        gridData.Add(bestMove, new PieceData(aiID, spawnedPiece, false));
+        
+        // Check if this physical placement causes a Yugo transformation
+        CheckMigoYogo(bestMove, aiID);
+
+        isPlayer1Turn = !isPlayer1Turn;
+        isAIThinking = false; // Unlock the board for the human's turn
+    }
+
+    // Simulates placing a piece.
+    // Nothing is instantiated.
+    // Only gridData changes.
+    MoveInfo MakeMove(Vector2Int move, int player)
+    {
+        MoveInfo info = new MoveInfo();
+
+        // Remember where we played.
+        info.position = move;
+
+        // Remember who played.
+        info.player = player;
+
+        // Add the simulated piece.
+        gridDataSimulate.Add(
+            move,
+            new PieceData(player, null)
+        );
+
+        // Simulate any transformations
+        // (Migo -> Yogo, removing pieces, etc.)
+        CheckMigoYogoSimulation(info);
+
+        return info;
+    }
+
+    // Reverses a move using the exact "receipt" generated by MakeMove.
+    void UndoMove(MoveInfo info)
+    {
+        // 1. Remove whatever piece is currently sitting at the move position.
+        // (This automatically deletes either the standard piece OR the Special Yugo piece if a transformation happened)
+        if (gridDataSimulate.ContainsKey(info.position))
+        {
+            gridDataSimulate.Remove(info.position);
+        }
+
+        // 2. Put back all the pieces that were destroyed by the Migo Yogo transformation
+        foreach (KeyValuePair<Vector2Int, PieceData> altered in info.alteredPieces)
+        {
+            Vector2Int oldPos = altered.Key;
+            PieceData oldData = altered.Value;
+
+            // Restore the original piece to the simulated grid
+            if (gridDataSimulate.ContainsKey(oldPos))
+            {
+                gridDataSimulate[oldPos] = oldData;
+            }
+            else
+            {
+                gridDataSimulate.Add(oldPos, oldData);
+            }
+        }
+    }
+    
+    int EvaluateBoardState(int aiID, int playerID)
+    {
+        int score = 0;
+
+        // Loop through every piece currently on the SIMULATED board
+        foreach (KeyValuePair<Vector2Int, PieceData> entry in gridDataSimulate)
+        {
+            Vector2Int pos = entry.Key;
+            PieceData piece = entry.Value;
+
+            // Is this piece owned by the AI or the Player?
+            // If it's the AI, we ADD points (+1). If it's the player, we SUBTRACT points (-1).
+            int pointMultiplier = (piece.playerID == aiID) ? 1 : -1;
+
+            // --- 1. SCORE SPECIAL PIECES (YUGOS) ---
+            if (piece.isSpecialPiece)
+            {
+                // Yugos are the key to winning, so they are worth massive points
+                score += 1000 * pointMultiplier;
+                
+                // You can even factor in your 'pieceValue' (number of connected Migos)
+                score += (piece.pieceValue * 10) * pointMultiplier; 
+            }
+            
+            // --- 2. SCORE STANDARD PIECES ---
+            else
+            {
+                // Base value for just having a piece on the board
+                score += 5 * pointMultiplier;
+
+                // --- 3. CENTER CONTROL BONUS ---
+                // Pieces closer to the center (0,0) are generally stronger.
+                // We calculate how far the piece is from the center (0,0).
+                int distanceFromCenter = Mathf.Abs(pos.x) + Mathf.Abs(pos.y);
+                
+                // We subtract the distance from 10. 
+                // A piece at (0,0) gets +10 points. A piece at (5,5) gets +0 points.
+                int centerBonus = Mathf.Max(0, 10 - distanceFromCenter); 
+                
+                score += centerBonus * pointMultiplier;
+            }
+        }
+
+        return score;
+    }
+
+    // Returns a list of all legal moves currently available on the SIMULATED board
+    List<Vector2Int> GetValidVirtualMoves(int playerID)
+    {
+        List<Vector2Int> validMoves = new List<Vector2Int>();
+
+        // Loop through the entire grid bounds
+        for (int x = minBounds.x; x <= maxBounds.x; x++) 
+        {
+            for (int y = minBounds.y; y <= maxBounds.y; y++)
+            {
+                Vector2Int potentialCell2D = new Vector2Int(x, y);
+
+                // 1. Must NOT be taken on the simulated board
+                if (gridDataSimulate.ContainsKey(potentialCell2D)) continue;
+
+                // 2. Must NOT break the "lines longer than 4" rule on the simulated board
+                // Notice we pass 'gridDataSimulate' here!
+                if (WouldCreateLineTooLong(potentialCell2D, playerID, gridDataSimulate)) continue;
+
+                // If it passes all checks, it is a valid future move
+                validMoves.Add(potentialCell2D);
+            }
+        }
+
+        // --- NEW: MOVE ORDERING (ALPHA-BETA ACCELERATOR) ---
+        // Sort the list so moves closest to the center (0,0) are at the very top.
+        // The AI will test these first, allowing Alpha-Beta to prune millions of useless branches!
+        validMoves.Sort((a, b) =>
+        {
+            int distA = Mathf.Abs(a.x) + Mathf.Abs(a.y);
+            int distB = Mathf.Abs(b.x) + Mathf.Abs(b.y);
+            return distA.CompareTo(distB); 
+        });
+
+        return validMoves;
+    }
+
+    void SyncSimulatedBoard()
+    {
+        gridDataSimulate.Clear();
+
+        foreach (KeyValuePair<Vector2Int, PieceData> entry in gridData)
+        {
+            Vector2Int pos = entry.Key;
+            PieceData realPiece = entry.Value;
+
+            // Create a BRAND NEW PieceData object with no GameObject attached
+            PieceData clonedPiece = new PieceData(
+                realPiece.playerID, 
+                null, // No visual object for the simulation
+                realPiece.isSpecialPiece, 
+                realPiece.pieceValue
+            );
+
+            gridDataSimulate.Add(pos, clonedPiece);
+        }
+    }
+
+    int Minimax(int depth, int alpha, int beta, bool isMaximizing, int aiID, int humanID)
+    {
+        // 1. Whose turn is it in this simulation?
+        int currentPlayerInSimulation = isMaximizing ? aiID : humanID;
+
+        // 2. Get all legal moves for this specific board state
+        List<Vector2Int> validMoves = GetValidVirtualMoves(currentPlayerInSimulation);
+
+        // 3. BASE CASE: Stop if we hit the depth limit or if the board is completely full
+        if (depth == 0 || validMoves.Count == 0)
+        {
+            return EvaluateBoardState(aiID, humanID);
+        }
+
+        if (isMaximizing) // --- THE AI'S TURN (Trying to get the highest score) ---
+        {
+            int maxScore = int.MinValue;
+
+            foreach (Vector2Int move in validMoves)
+            {
+                // A. Simulate the move
+                MoveInfo receipt = MakeMove(move, aiID);
+
+                int score;
+                // B. If this move instantly wins the game (AIGO!), give it a massive score and stop looking
+                if (receipt.resultsInWin)
+                {
+                    score = 100000 + depth; // Add depth so faster wins score slightly higher
+                }
+                else
+                {
+                    // C. Look deeper into the future (Switch turns to the Human)
+                    score = Minimax(depth - 1, alpha, beta, false, aiID, humanID);
+                }
+
+                // D. Clean up the board
+                UndoMove(receipt);
+
+                // E. Track the best score
+                maxScore = Mathf.Max(maxScore, score);
+                alpha = Mathf.Max(alpha, score);
+
+                // F. Alpha-Beta Pruning: If the human already found a better path elsewhere, skip the rest of these bad moves
+                if (beta <= alpha) break; 
+            }
+            return maxScore;
+        }
+        else // --- THE HUMAN'S TURN (Trying to get the lowest score for the AI) ---
+        {
+            int minScore = int.MaxValue;
+
+            foreach (Vector2Int move in validMoves)
+            {
+                MoveInfo receipt = MakeMove(move, humanID);
+
+                int score;
+                // If the human wins here, it's terrible for the AI
+                if (receipt.resultsInWin)
+                {
+                    score = -100000 - depth; 
+                }
+                else
+                {
+                    // Look deeper into the future (Switch turns back to the AI)
+                    score = Minimax(depth - 1, alpha, beta, true, aiID, humanID);
+                }
+
+                UndoMove(receipt);
+
+                minScore = Mathf.Min(minScore, score);
+                beta = Mathf.Min(beta, score);
+
+                if (beta <= alpha) break;
+            }
+            return minScore;
+        }
+    }
+
+    // This function strictly "thinks" and returns a coordinate. It does not touch the visual game.
+    Vector2Int FindTheBestMove()
+    {
+        int aiID = isPlayer1Turn ? 1 : 2;
+        int humanID = isPlayer1Turn ? 2 : 1;
+
+        // 1. Prepare the sandbox so the AI can think
+        SyncSimulatedBoard();
+
+        // 2. Get immediate valid moves
+        List<Vector2Int> validMoves = GetValidVirtualMoves(aiID);
+
+        // 3. If there are no moves left, return a "dummy" coordinate as an error signal
+        if (validMoves.Count == 0)
+        {
+            return new Vector2Int(-999, -999); 
+        }
+
+        int bestScore = int.MinValue;
+        Vector2Int bestMove = validMoves[0]; // Fallback to the first available move
+        
+        // Set how many turns ahead the AI should think. 
+        int searchDepth = 4; 
+
+        // 4. Test every immediate move using Minimax
+        foreach (Vector2Int move in validMoves)
+        {
+            MoveInfo receipt = MakeMove(move, aiID);
+            
+            int moveScore;
+            if (receipt.resultsInWin)
+            {
+                moveScore = 100000; // If it can win right now, take the win immediately!
+            }
+            else
+            {
+                // Call Minimax, handing the next turn to the human (false)
+                moveScore = Minimax(searchDepth - 1, int.MinValue, int.MaxValue, false, aiID, humanID);
+            }
+
+            UndoMove(receipt);
+
+            // Keep the move that returned the highest score
+            if (moveScore > bestScore)
+            {
+                bestScore = moveScore;
+                bestMove = move;
+            }
+        }
+
+        // 5. Return the winning coordinate back to the main game
+        return bestMove;
+    }
+    
+    // ==========================================
 
     // Function to check if the game is over and tally special piece points
     void CheckGameOverAndCalculateWinner()
@@ -625,7 +1096,7 @@ public class GridPlacer : MonoBehaviour
                 if (!gridData.ContainsKey(potentialCell2D))
                 {
                     // Check if Player 1 OR Player 2 can safely place a piece here
-                    if (!WouldCreateLineTooLong(potentialCell2D, 1) || !WouldCreateLineTooLong(potentialCell2D, 2))
+                    if (!WouldCreateLineTooLong(potentialCell2D, 1, gridData) || !WouldCreateLineTooLong(potentialCell2D, 2, gridData))
                     {
                         return true; // Early return: We found a valid move, stop checking!
                     }
