@@ -40,6 +40,14 @@ public class GridPlacer : MonoBehaviour
     public victory_hide_show_script victoryScript;
     public history_script historyScript;
 
+    [Header("Audio Settings")]
+    [Tooltip("Drag the AudioSource component here. This acts as our speaker.")]
+    public AudioSource gameAudioSource; 
+    
+    [Tooltip("Drag your sound effect file here.")]
+    public AudioClip placePieceSound;
+    public AudioClip yogoTransformationSound; // You can add as many as you need!
+
 
     private bool isPlayer1Turn = true;
     private bool isAIThinking = false;
@@ -304,6 +312,7 @@ public class GridPlacer : MonoBehaviour
             Debug.Log($"Cell {cellCoordinate2D} is already taken! Try another spot.");
             return; 
         }
+        
 
         historyScript.AddMove(cellCoordinate2D.x, cellCoordinate2D.y, 0);
 
@@ -325,6 +334,8 @@ public class GridPlacer : MonoBehaviour
         GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab;
         GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
 
+
+        PlaySound(placePieceSound);
         // --- NEW: PARENT THE STANDARD PIECE ---
         // If we assigned a group in the inspector, put the piece inside it
         if (piecesGroup != null)
@@ -664,6 +675,8 @@ public class GridPlacer : MonoBehaviour
         Vector2Int chosenCell2D = validMoves[randomIndex];
         Vector3Int chosenCell3D = new Vector3Int(chosenCell2D.x, chosenCell2D.y, 0);
 
+        PlaySound(placePieceSound);
+
         historyScript.AddMove(chosenCell2D.x, chosenCell2D.y, 0);
 
         // Place the piece in that cell
@@ -718,6 +731,8 @@ public class GridPlacer : MonoBehaviour
         Vector3 snapPosition = gameGrid.GetCellCenterWorld(chosenCell3D);
         GameObject currentPrefabToPlace = isPlayer1Turn ? player1Prefab : player2Prefab; 
         GameObject spawnedPiece = Instantiate(currentPrefabToPlace, snapPosition, Quaternion.identity);
+
+        PlaySound(placePieceSound);
 
         if (piecesGroup != null)
         {
@@ -1105,5 +1120,19 @@ public class GridPlacer : MonoBehaviour
         }
         Debug.Log("No valid moves found for either player.");
         return false; // Checked every single tile and found 0 valid moves
+    }
+
+    // A reusable function to play any sound effect
+    void PlaySound(AudioClip clipToPlay)
+    {
+        // Safety check: Only try to play if we actually have a speaker and a sound file
+        if (gameAudioSource != null && clipToPlay != null)
+        {
+            gameAudioSource.PlayOneShot(clipToPlay);
+        }
+        else
+        {
+            Debug.LogWarning("Tried to play a sound, but the AudioSource or AudioClip is missing!");
+        }
     }
 }
