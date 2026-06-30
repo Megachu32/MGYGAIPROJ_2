@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement; // You MUST include this to load scenes!
 
 public class ui_script : MonoBehaviour
 {
@@ -49,5 +50,10 @@ public class ui_script : MonoBehaviour
         targetGridPlacer.chooseRed();
         Debug.Log("Play as Red clicked!");
     }
+    public void ExitToMainMenu()
+    {
+        SceneManager.LoadScene("MainMenuScene");
+    }
+    
 
 }

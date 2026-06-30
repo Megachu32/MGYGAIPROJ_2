@@ -24,6 +24,9 @@ public class timer_script : MonoBehaviour
     [Tooltip("Check this box while playing to manually force a turn switch!")]
     public bool forceSwitchTurn = false;
 
+    [Header("Debug & Manual Testing")]
+    public victory_hide_show_script vicScript;
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
@@ -71,6 +74,9 @@ public class timer_script : MonoBehaviour
             UpdateDisplay(textUI, timeRemaining);
             isRunning = false; 
             OnTimerZero(timerNum);
+
+            bool redWon = (timerNum == 1)? false : true;
+            vicScript.DisplayVictoryScreen(redWon, "Ran Out of time");
         }
     }
 
