@@ -8,6 +8,7 @@ public class ui_script : MonoBehaviour
     [Header("External References")]
     public timer_script targetScript;
     public GridPlacer targetGridPlacer;
+    public history_script targetHistoryScript;
 
     public void resetButton()
     {
@@ -16,6 +17,7 @@ public class ui_script : MonoBehaviour
         targetGridPlacer.ClearBoard();
         targetGridPlacer.clearPlayingModes();
         targetGridPlacer.chooseRed(); // Reset to default color
+        targetHistoryScript.clearHistory();
         Debug.Log("Reset button clicked!");
     }
     public void startButton()

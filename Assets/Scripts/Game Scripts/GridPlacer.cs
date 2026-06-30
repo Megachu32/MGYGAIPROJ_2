@@ -37,6 +37,7 @@ public class GridPlacer : MonoBehaviour
     [Header("Outside Scripts")]
     public timer_script timerScript;
     public victory_hide_show_script victoryScript;
+    public history_script historyScript;
 
 
     private bool isPlayer1Turn = true;
@@ -237,6 +238,8 @@ public class GridPlacer : MonoBehaviour
             return; 
         }
 
+        historyScript.AddMove(cellCoordinate2D.x, cellCoordinate2D.y, 0);
+
         // Figure out whose turn it is BEFORE placing the piece
         int currentPlayerID = isPlayer1Turn ? 1 : 2;
         timerScript.SwitchTurn(); // Start the timer for the current player as soon as they place a piece
@@ -378,47 +381,58 @@ public class GridPlacer : MonoBehaviour
             Vector3 snapPos = gameGrid.GetCellCenterWorld(new Vector3Int(placedPos.x, placedPos.y, 0));
             GameObject specialPrefab = (playerID == 1) ? player1SpecialPrefab : player2SpecialPrefab;
 
+            int totalConnectedPieces = totalMigoCount + yugoCount; // Total connected pieces including Yugos
+
+            int countLines = 1; // to count how many lines of 4 or more are connected to this piece
+
             // for changing the special piece look based on the number of migos connected
             if (playerID == 1)
             {
-                if (totalMigoCount <= 16 && totalMigoCount > 12)
+                if (totalConnectedPieces <= 16 && totalConnectedPieces > 12)
                 {
                     specialPrefab = player1SpecialPrefabS;
+                    countLines = 4;
                 }
-                else if (totalMigoCount <= 12 && totalMigoCount > 8)
+                else if (totalConnectedPieces <= 12 && totalConnectedPieces > 8)
                 {
                     specialPrefab = player1SpecialPrefabT;
+                    countLines = 3;
                 }
-                else if (totalMigoCount <= 8 && totalMigoCount > 4)
+                else if (totalConnectedPieces <= 8 && totalConnectedPieces > 4)
                 {
                     specialPrefab = player1SpecialPrefabO;
+                    countLines = 2;
                 }
-                else if (totalMigoCount <= 4)
+                else if (totalConnectedPieces <= 4)
                 {
                     specialPrefab = player1SpecialPrefab;
                 }
             }
             else
             {
-                if (totalMigoCount <= 16 && totalMigoCount > 12)
+                if (totalConnectedPieces <= 16 && totalConnectedPieces > 12)
                 {
                     specialPrefab = player2SpecialPrefabS;
+                    countLines = 4;
                 }
-                else if (totalMigoCount <= 12 && totalMigoCount > 8)
+                else if (totalConnectedPieces <= 12 && totalConnectedPieces > 8)
                 {
                     specialPrefab = player2SpecialPrefabT;
+                    countLines = 3;
                 }
-                else if (totalMigoCount <= 8 && totalMigoCount > 4)
+                else if (totalConnectedPieces <= 8 && totalConnectedPieces > 4)
                 {
                     specialPrefab = player2SpecialPrefabO;
+                    countLines = 2;
                 }
-                else if (totalMigoCount <= 4)
+                else if (totalConnectedPieces <= 4)
                 {
                     specialPrefab = player2SpecialPrefab;
                 }
             }
 
-            
+            historyScript.ReplaceLastMove(placedPos.x, placedPos.y, countLines); // Pass the number of lines to the history script
+
             GameObject specialPiece = Instantiate(specialPrefab, snapPos, Quaternion.identity);
 
             // Parent the special piece
@@ -428,7 +442,7 @@ public class GridPlacer : MonoBehaviour
             }
 
             // Save the newly accumulated value into the grid memory!
-            gridData[placedPos] = new PieceData(playerID, specialPiece, true, totalMigoCount);
+            gridData[placedPos] = new PieceData(playerID, specialPiece, true, totalConnectedPieces);
         }
     }
 
@@ -509,6 +523,7 @@ public class GridPlacer : MonoBehaviour
         //check if no avalible move
         if (validMoves.Count == 0)
         {
+            CheckGameOverAndCalculateWinner();
             Debug.Log("AI has no valid moves left! The board is full or blocked.");
             return; 
         }
@@ -517,6 +532,8 @@ public class GridPlacer : MonoBehaviour
         int randomIndex = UnityEngine.Random.Range(0, validMoves.Count);
         Vector2Int chosenCell2D = validMoves[randomIndex];
         Vector3Int chosenCell3D = new Vector3Int(chosenCell2D.x, chosenCell2D.y, 0);
+
+        historyScript.AddMove(chosenCell2D.x, chosenCell2D.y, 0);
 
         // Place the piece in that cell
         timerScript.SwitchTurn();
@@ -599,6 +616,10 @@ public class GridPlacer : MonoBehaviour
             for (int y = minBounds.y; y <= maxBounds.y; y++)
             {
                 Vector2Int potentialCell2D = new Vector2Int(x, y);
+                Vector3Int potentialCell3D = new Vector3Int(x, y, 0);
+
+                // FIX 1: Ignore tiles that are outside the playable board area
+                if (!IsCellInBounds(potentialCell3D)) continue;
 
                 // First, check if the cell is completely empty
                 if (!gridData.ContainsKey(potentialCell2D))
@@ -611,6 +632,7 @@ public class GridPlacer : MonoBehaviour
                 }
             }
         }
+        Debug.Log("No valid moves found for either player.");
         return false; // Checked every single tile and found 0 valid moves
     }
 }
