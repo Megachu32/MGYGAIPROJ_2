@@ -5,6 +5,8 @@ public class timer_script : MonoBehaviour
 {
     [Header("Timer Settings")]
     [Tooltip("Set the starting time in MINUTES (e.g., 10 for 10:00)")]
+
+    // set startiing time in minutes, can be changed in the inspector
     public float startingTimeMinutes = 10f;
     
     // Internal counters for seconds
@@ -16,6 +18,7 @@ public class timer_script : MonoBehaviour
     // 0 = Not Started, 1 = Timer 1 Active, 2 = Timer 2 Active
     public int activeTimer { get; private set; } = 0;
 
+    // imorting the ui
     [Header("UI References")]
     public TextMeshProUGUI timer1Text;
     public TextMeshProUGUI timer2Text;

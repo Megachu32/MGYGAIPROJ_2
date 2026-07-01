@@ -11,12 +11,14 @@ public class GridPlacer : MonoBehaviour
     // --- NEW: SCENE ORGANIZATION ---
     [Header("Scene Organization")]
     [Tooltip("Drag an empty GameObject here to hold all the spawned pieces.")]
-    public Transform piecesGroup; 
-    
+    public Transform piecesGroup;
+
+    //setting the player peices
     [Header("Standard Player Prefabs")]
     public GameObject player1Prefab; 
     public GameObject player2Prefab; 
 
+    // setting special migo yugo pieces
     [Header("Special 'Migo Yogo' Prefabs")]
     [Tooltip("The special piece Player 1 gets for connecting 4")]
     public GameObject player1SpecialPrefab;
@@ -31,10 +33,13 @@ public class GridPlacer : MonoBehaviour
     public GameObject player2SpecialPrefabS;
 
 
+
+    //setting the board boundries
     [Header("Grid Boundaries")]
     public Vector2Int minBounds = new Vector2Int(-5, -5);
     public Vector2Int maxBounds = new Vector2Int(5, 5);
 
+    // importing other scripts
     [Header("Outside Scripts")]
     public timer_script timerScript;
     public victory_hide_show_script victoryScript;
@@ -47,6 +52,7 @@ public class GridPlacer : MonoBehaviour
     [Tooltip("Drag your sound effect file here.")]
     public AudioClip placePieceSound;
     public AudioClip yogoTransformationSound; // You can add as many as you need!
+
 
 
     private bool isPlayer1Turn = true;
@@ -94,6 +100,7 @@ public class GridPlacer : MonoBehaviour
     private Dictionary<Vector2Int, PieceData> gridData = new Dictionary<Vector2Int, PieceData>();
     private Dictionary<Vector2Int, PieceData> gridDataSimulate = new Dictionary<Vector2Int, PieceData>();
 
+    // for enabling grid placer
     public void EnablePlacing()
     {
         canPlacePieces = true;
