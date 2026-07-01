@@ -26,6 +26,7 @@ public class GridPlacer : MonoBehaviour
     public GameObject player1SpecialPrefabT;
     public GameObject player1SpecialPrefabS;
 
+    //code for putting the prefab
     [Tooltip("The special piece Player 2 gets for connecting 4")]
     public GameObject player2SpecialPrefab;
     public GameObject player2SpecialPrefabO;
@@ -45,10 +46,12 @@ public class GridPlacer : MonoBehaviour
     public victory_hide_show_script victoryScript;
     public history_script historyScript;
 
+    //audio source?
     [Header("Audio Settings")]
     [Tooltip("Drag the AudioSource component here. This acts as our speaker.")]
     public AudioSource gameAudioSource; 
     
+    //sound for placing a piece?
     [Tooltip("Drag your sound effect file here.")]
     public AudioClip placePieceSound;
     public AudioClip yogoTransformationSound; // You can add as many as you need!
@@ -86,6 +89,16 @@ public class GridPlacer : MonoBehaviour
         }
     }
 
+
+
+
+
+
+
+
+
+
+
     public class MoveInfo
     {
         public Vector2Int position; // Where the piece was placed
@@ -96,9 +109,28 @@ public class GridPlacer : MonoBehaviour
         public Dictionary<Vector2Int, PieceData> alteredPieces = new Dictionary<Vector2Int, PieceData>();
     }
 
+
+
+
+
+
+
+
+
+
     // Our Dictionary now stores our custom PieceData instead of just an integer
     private Dictionary<Vector2Int, PieceData> gridData = new Dictionary<Vector2Int, PieceData>();
+
+    //grid data for simulating moves
     private Dictionary<Vector2Int, PieceData> gridDataSimulate = new Dictionary<Vector2Int, PieceData>();
+
+
+
+
+
+
+
+
 
     // for enabling grid placer
     public void EnablePlacing()
@@ -107,11 +139,34 @@ public class GridPlacer : MonoBehaviour
         Debug.Log("GridPlacer is now active!");
     }
 
+
+
+
+
+
+
+
+
+
+
+
     // You can also add a function to stop it again if needed
     public void DisablePlacing()
     {
         canPlacePieces = false;
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     public void ClearBoard()
     {
@@ -134,20 +189,54 @@ public class GridPlacer : MonoBehaviour
         Debug.Log("The board has been cleared!");
     }
 
+
+
+
+
+
+
+
+
     // function to set human vs human
     public void humanMove(){   
         humanIsPlaying = true;
     }
+
+
+
+
+
+
+
+
+
 
     // function to set easy ai vs human
     public void easyAIMove(){   
         easyAIIsPlaying = true;
     }
 
+
+
+
+
+
+
+
+
     // function to set normal ai vs human
     public void normalAIMove(){   
         normalAIIsPlaying = true;
     }
+
+
+
+
+
+
+
+
+
 
     public void clearPlayingModes(){
         humanIsPlaying = false;
@@ -155,16 +244,43 @@ public class GridPlacer : MonoBehaviour
         normalAIIsPlaying = false;
     }
 
+
+
+
+
+
+
+
+
+
+
     // function to choose red for the game piece
     public void chooseRed(){
         playAsRed = true;
     }
+
+
+
+
+
+
+
+
+
 
     // function to choose black for the game piece
     public void chooseBlack(){
         timerScript.SwitchTurn(); // Start the timer for the current player as soon as they place a piece
         playAsRed = false;
     }
+
+
+
+
+
+
+
+
 
     void Update()
     {
@@ -274,6 +390,11 @@ public class GridPlacer : MonoBehaviour
             }
         }
     }
+    
+
+
+
+
 
     //adding delay and calling the ai move function
     System.Collections.IEnumerator WaitAndMakeAIMove()
@@ -287,6 +408,18 @@ public class GridPlacer : MonoBehaviour
         isAIThinking = false; // Unlock for the next turn
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
     System.Collections.IEnumerator WaitAndMakeAIMoveAdvance()
     {
         isAIThinking = true; // Lock the AI so it doesn't trigger again
@@ -297,6 +430,18 @@ public class GridPlacer : MonoBehaviour
         
         isAIThinking = false; // Unlock for the next turn
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     // function to place a piece on the board
     void PlacePieceAtMouse()
@@ -360,12 +505,30 @@ public class GridPlacer : MonoBehaviour
         isPlayer1Turn = !isPlayer1Turn;
     }
 
+
+
+
+
+
+
+
+
     // function to check if a cell is within the board
     bool IsCellInBounds(Vector3Int cellPos)
     {
         return cellPos.x >= minBounds.x && cellPos.x <= maxBounds.x &&
                cellPos.y >= minBounds.y && cellPos.y <= maxBounds.y;
     }
+
+
+
+
+
+
+
+
+
+
 
     // function to check if a line is more than 4 long
     bool WouldCreateLineTooLong(Vector2Int testPos, int playerID, Dictionary<Vector2Int, PieceData> gridToUse)
@@ -379,6 +542,18 @@ public class GridPlacer : MonoBehaviour
 
         return false; // Safe to place!
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     // function to check how long a line would be
     int GetPotentialLineLength(Vector2Int startPos, int playerID, Vector2Int direction, Dictionary<Vector2Int, PieceData> gridToUse)
@@ -395,6 +570,20 @@ public class GridPlacer : MonoBehaviour
         return totalLength;
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // Helper function to count pieces in a specific direction
     int CountPiecesInDirection(Vector2Int startPos, int playerID, Vector2Int direction, Dictionary<Vector2Int, PieceData> gridToUse)
     {
@@ -410,6 +599,21 @@ public class GridPlacer : MonoBehaviour
 
         return count;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     // ==========================================
     // --- THE MIGO YOGO TRANSFORMATION LOGIC ---
@@ -534,6 +738,18 @@ public class GridPlacer : MonoBehaviour
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
+
     // Helper function to find connected pieces and add them to our HashSet
     // Looks in a specific direction (like Left/Right) and collects all matching pieces into a list
     void GatherPiecesInLine(Vector2Int startPos, int playerID, Vector2Int direction, HashSet<Vector2Int> cellsToTransform, Dictionary<Vector2Int, PieceData> gridToUse)
@@ -562,6 +778,17 @@ public class GridPlacer : MonoBehaviour
         }
     }
 
+
+
+
+
+
+
+
+
+
+
+
     // helper function to get all pieces in a direction
     List<Vector2Int> GetPiecesInDirection(Vector2Int startPos, int playerID, Vector2Int direction, Dictionary<Vector2Int, PieceData> gridToUse)
     {
@@ -577,6 +804,21 @@ public class GridPlacer : MonoBehaviour
 
         return foundCells;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     void CheckMigoYogoSimulation(MoveInfo info)
     {
@@ -634,6 +876,18 @@ public class GridPlacer : MonoBehaviour
             gridDataSimulate[info.position] = new PieceData(info.player, null, true, totalConnectedPieces);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     // ==========================================
     // --- THE AI LOGIC ---
@@ -707,6 +961,15 @@ public class GridPlacer : MonoBehaviour
         isPlayer1Turn = !isPlayer1Turn;
     }
 
+
+
+
+
+
+
+
+
+
     async void aiMoveAdvance()
     {
         isAIThinking = true; // Lock the board so the human can't click
@@ -756,6 +1019,14 @@ public class GridPlacer : MonoBehaviour
         isAIThinking = false; // Unlock the board for the human's turn
     }
 
+
+
+
+
+
+
+
+
     // Simulates placing a piece.
     // Nothing is instantiated.
     // Only gridData changes.
@@ -781,6 +1052,14 @@ public class GridPlacer : MonoBehaviour
 
         return info;
     }
+
+
+
+
+
+
+
+
 
     // Reverses a move using the exact "receipt" generated by MakeMove.
     void UndoMove(MoveInfo info)
@@ -809,6 +1088,13 @@ public class GridPlacer : MonoBehaviour
             }
         }
     }
+
+
+
+
+
+
+
     
     int EvaluateBoardState(int aiID, int playerID)
     {
@@ -856,6 +1142,13 @@ public class GridPlacer : MonoBehaviour
         return score;
     }
 
+
+
+
+
+
+
+
     // Returns a list of all legal moves currently available on the SIMULATED board
     List<Vector2Int> GetValidVirtualMoves(int playerID)
     {
@@ -893,6 +1186,11 @@ public class GridPlacer : MonoBehaviour
         return validMoves;
     }
 
+
+
+
+
+
     void SyncSimulatedBoard()
     {
         gridDataSimulate.Clear();
@@ -913,6 +1211,11 @@ public class GridPlacer : MonoBehaviour
             gridDataSimulate.Add(pos, clonedPiece);
         }
     }
+
+
+
+
+
 
     int Minimax(int depth, int alpha, int beta, bool isMaximizing, int aiID, int humanID)
     {
@@ -992,6 +1295,12 @@ public class GridPlacer : MonoBehaviour
         }
     }
 
+
+
+
+
+
+
     // This function strictly "thinks" and returns a coordinate. It does not touch the visual game.
     Vector2Int FindTheBestMove()
     {
@@ -1046,7 +1355,11 @@ public class GridPlacer : MonoBehaviour
         return bestMove;
     }
     
-    // ==========================================
+
+
+
+
+
 
     // Function to check if the game is over and tally special piece points
     void CheckGameOverAndCalculateWinner()
@@ -1100,6 +1413,12 @@ public class GridPlacer : MonoBehaviour
         }
     }
 
+
+
+
+
+
+
     // Helper function to check if ANY valid moves remain on the board
     bool IsAnyValidMoveAvailable()
     {
@@ -1128,6 +1447,12 @@ public class GridPlacer : MonoBehaviour
         Debug.Log("No valid moves found for either player.");
         return false; // Checked every single tile and found 0 valid moves
     }
+
+
+
+
+
+
 
     // A reusable function to play any sound effect
     void PlaySound(AudioClip clipToPlay)
